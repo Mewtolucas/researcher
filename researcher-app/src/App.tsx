@@ -6,15 +6,14 @@ import ProgressPanel from './components/ProgressPanel';
 import ResultsDisplay from './components/ResultsDisplay';
 import BibliographyPanel from './components/BibliographyPanel';
 import ThemeCustomizer from './components/ThemeCustomizer';
+import { useThemeStyles } from './utils/themeStyles';
 
 function AppContent() {
+  const ts = useThemeStyles();
   return (
     <div
       className="flex h-screen overflow-hidden transition-colors duration-300"
-      style={{
-        background: 'var(--theme-bg-gradient)',
-        color: 'var(--theme-text)',
-      }}
+      style={ts.appBackground}
     >
       <Sidebar />
       <main className="flex-1 overflow-y-auto relative z-10" role="main">

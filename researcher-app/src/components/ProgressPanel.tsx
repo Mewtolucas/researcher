@@ -1,6 +1,7 @@
 import React from 'react';
 import { Loader2, CheckCircle2, XCircle, Clock, Sparkles } from 'lucide-react';
 import { useResearch } from '../context/ResearchContext';
+import { useThemeStyles } from '../utils/themeStyles';
 
 const SOURCE_DISPLAY: Record<string, string> = {
   google_scholar: 'Google Scholar',
@@ -13,6 +14,7 @@ const SOURCE_DISPLAY: Record<string, string> = {
 
 export default function ProgressPanel() {
   const { state } = useResearch();
+  const ts = useThemeStyles();
   const { progress } = state;
 
   if (!progress.isResearching && progress.currentPhase === 'idle') return null;
@@ -36,13 +38,7 @@ export default function ProgressPanel() {
   };
 
   return (
-    <div className="p-5 animate-fade-in-up overflow-hidden relative shadow-xl" style={{
-      background: `color-mix(in srgb, var(--theme-panel) calc(var(--theme-panel-opacity) * 100%), transparent)`,
-      backdropFilter: 'blur(16px) saturate(180%)',
-      WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-      borderRadius: 'var(--theme-radius)',
-      border: `1px solid color-mix(in srgb, var(--theme-text) 8%, transparent)`,
-    }}>
+    <div className="p-5 animate-fade-in-up overflow-hidden relative shadow-xl" style={ts.panelStyle}>
       {/* Shimmer overlay when researching */}
       {progress.isResearching && (
         <div className="absolute inset-0 animate-shimmer pointer-events-none" />
@@ -50,7 +46,7 @@ export default function ProgressPanel() {
 
       <div className="flex items-center gap-3 mb-4 relative">
         {progress.isResearching ? (
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg" style={{ background: `linear-gradient(135deg, var(--theme-primary), var(--theme-accent))`, animation: 'progressPulse 2s infinite' }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg" style={{ ...ts.gradientIcon, animation: 'progressPulse 2s infinite' }}>
             <Sparkles size={15} className="text-white" />
           </div>
         ) : progress.currentPhase === 'complete' ? (
@@ -59,20 +55,20 @@ export default function ProgressPanel() {
           </div>
         ) : null}
         <div>
-          <span className="text-sm font-semibold text-surface-800 dark:text-surface-200 block">
+          <span className="text-sm font-semibold block" style={{ color: ts.text }}>
             {progress.isResearching ? 'Researching...' : progress.currentPhase === 'complete' ? 'Research Complete' : 'Research Status'}
           </span>
-          <span className="text-xs text-surface-400 font-medium">
+          <span className="text-xs font-medium" style={{ color: ts.textMuted }}>
             {progress.statusMessage}
           </span>
         </div>
-        <span className="ml-auto text-xs font-bold text-primary-600 dark:text-primary-400 bg-primary-100/60 dark:bg-primary-500/10 px-2.5 py-1 rounded-lg">
+        <span className="ml-auto text-xs font-bold px-2.5 py-1 rounded-lg" style={{ color: ts.primary, background: ts.primaryBg }}>
           {progress.overallProgress}%
         </span>
       </div>
 
       {/* Progress bar */}
-      <div className="w-full h-1.5 bg-surface-100 dark:bg-surface-800/50 rounded-full mb-4 overflow-hidden">
+      <div className="w-full h-1.5 rounded-full mb-4 overflow-hidden" style={{ background: ts.hoverBg }}>
         <div
           className={`h-full rounded-full transition-all duration-700 ease-out ${
             progress.currentPhase === 'complete'
@@ -92,7 +88,7 @@ export default function ProgressPanel() {
               className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-300 ${getStatusBg(s.status)}`}
             >
               {getStatusIcon(s.status)}
-              <span className="text-surface-600 dark:text-surface-400 truncate text-[11px] font-medium flex-1">
+              <span className="truncate text-[11px] font-medium flex-1" style={{ color: ts.textMuted }}>
                 {SOURCE_DISPLAY[s.source] || (s.source.startsWith('http') ? new URL(s.source).hostname : s.source)}
               </span>
               {s.status === 'completed' && (

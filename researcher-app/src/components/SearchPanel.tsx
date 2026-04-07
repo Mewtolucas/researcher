@@ -4,6 +4,7 @@ import {
   FileText, BookOpen, ListChecks, AlignLeft, ArrowRight, Link,
 } from 'lucide-react';
 import { useResearch } from '../context/ResearchContext';
+import { useThemeStyles } from '../utils/themeStyles';
 import { SourceType, OutputMode, DocumentType } from '../types';
 
 const SOURCE_LABELS: Record<SourceType, string> = {
@@ -37,6 +38,7 @@ const AVAILABLE_SOURCES: SourceType[] = ['google_scholar', 'core', 'internet_arc
 
 export default function SearchPanel() {
   const { state, dispatch, startResearch } = useResearch();
+  const ts = useThemeStyles();
   const [showFilters, setShowFilters] = useState(false);
   const [customUrlInput, setCustomUrlInput] = useState('');
 
@@ -67,26 +69,21 @@ export default function SearchPanel() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="animate-fade-in-up overflow-hidden shadow-xl" style={{
-      background: `color-mix(in srgb, var(--theme-panel) calc(var(--theme-panel-opacity) * 100%), transparent)`,
-      backdropFilter: 'blur(16px) saturate(180%)',
-      WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-      borderRadius: 'var(--theme-radius)',
-      border: `1px solid color-mix(in srgb, var(--theme-text) 8%, transparent)`,
-    }}>
+    <div className="animate-fade-in-up overflow-hidden shadow-xl" style={ts.panelStyle}>
       {/* Subtle gradient accent at top */}
-      <div className="h-[2px]" style={{ background: `linear-gradient(to right, transparent, color-mix(in srgb, var(--theme-primary) 50%, transparent), transparent)` }} />
+      <div className="h-[2px]" style={{ background: `linear-gradient(to right, transparent, ${ts.primary}, transparent)` }} />
 
       {/* Search Input */}
       <form onSubmit={handleSubmit} className="p-5 pb-4">
         <div className="flex gap-3">
           <div className="flex-1 relative group">
-            <Search size={18} className="absolute left-4 top-4 text-surface-300 dark:text-surface-500 group-focus-within:text-primary-500 transition-colors duration-200" />
+            <Search size={18} className="absolute left-4 top-4 transition-colors duration-200" style={{ color: ts.textFaint }} />
             <textarea
               value={state.currentQuery}
               onChange={(e) => dispatch({ type: 'SET_QUERY', payload: e.target.value })}
               placeholder="What would you like to research?"
-              className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-surface-200/80 dark:border-surface-700/50 bg-white/60 dark:bg-surface-800/40 text-surface-800 dark:text-surface-200 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400/50 dark:focus:border-primary-500/30 resize-none text-[15px] leading-relaxed transition-all duration-200 focus:bg-white/80 dark:focus:bg-surface-800/60 focus-ring"
+              className="w-full pl-11 pr-4 py-3.5 focus:outline-none focus:ring-2 resize-none text-[15px] leading-relaxed transition-all duration-200"
+              style={{ ...ts.inputStyle, '--tw-ring-color': ts.primaryBorder } as React.CSSProperties}
               rows={2}
               aria-label="Research question"
             />
@@ -95,11 +92,10 @@ export default function SearchPanel() {
             type="submit"
             disabled={!state.currentQuery.trim() || state.progress.isResearching}
             className="group/btn px-6 py-3.5 text-white disabled:opacity-40 font-semibold text-sm transition-all duration-300 flex items-center gap-2 self-start disabled:cursor-not-allowed shadow-lg hover:shadow-xl disabled:shadow-none hover:scale-[1.02] active:scale-[0.98]"
-            style={{
-              background: (!state.currentQuery.trim() || state.progress.isResearching) ? '#94a3b8' : `linear-gradient(to right, var(--theme-primary), var(--theme-accent))`,
-              borderRadius: 'var(--theme-radius)',
-              boxShadow: (!state.currentQuery.trim() || state.progress.isResearching) ? 'none' : `0 8px 20px color-mix(in srgb, var(--theme-primary) 25%, transparent)`,
-            }}
+            style={(!state.currentQuery.trim() || state.progress.isResearching)
+              ? { background: '#94a3b8', borderRadius: ts.radius }
+              : ts.gradientButton
+            }
           >
             {state.progress.isResearching ? (
               <>
@@ -118,17 +114,14 @@ export default function SearchPanel() {
 
       {/* Output Mode Selection */}
       <div className="px-5 pb-4">
-        <p className="text-[10px] font-semibold text-surface-400 uppercase tracking-wider mb-2.5 px-0.5">Output Format</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wider mb-2.5 px-0.5" style={{ color: ts.textMuted }}>Output Format</p>
         <div className="flex gap-2 flex-wrap">
           {OUTPUT_MODE_CONFIG.map(({ mode, label, icon, desc }) => (
             <button
               key={mode}
               onClick={() => dispatch({ type: 'SET_OUTPUT_MODE', payload: mode })}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 ${
-                state.outputMode === mode
-                  ? 'bg-gradient-to-r from-primary-500/10 to-accent-500/5 text-primary-700 dark:text-primary-300 border border-primary-200/50 dark:border-primary-500/20 shadow-sm shadow-primary-500/5'
-                  : 'bg-white/40 dark:bg-white/5 text-surface-500 dark:text-surface-400 border border-surface-200/50 dark:border-surface-700/30 hover:bg-white/70 dark:hover:bg-white/10 hover:text-surface-700 dark:hover:text-surface-300 hover:border-surface-300/50 dark:hover:border-surface-600/30'
-              }`}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-all duration-200"
+              style={state.outputMode === mode ? ts.activeChip : ts.inactiveChip}
               title={desc}
             >
               {icon}
@@ -140,18 +133,15 @@ export default function SearchPanel() {
 
       {/* Source Selection */}
       <div className="px-5 pb-4">
-        <p className="text-[10px] font-semibold text-surface-400 uppercase tracking-wider mb-2.5 px-0.5">Sources</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wider mb-2.5 px-0.5" style={{ color: ts.textMuted }}>Sources</p>
         <div className="flex flex-wrap gap-2">
           {AVAILABLE_SOURCES.map(source => {
             const isActive = state.selectedSources.includes(source);
             return (
               <label
                 key={source}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium cursor-pointer transition-all duration-200 border ${
-                  isActive
-                    ? `bg-gradient-to-r ${SOURCE_COLORS[source]} shadow-sm`
-                    : 'bg-white/30 dark:bg-white/3 text-surface-400 dark:text-surface-500 border-surface-200/40 dark:border-surface-700/20 hover:bg-white/60 dark:hover:bg-white/5 hover:text-surface-600 dark:hover:text-surface-400'
-                }`}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium cursor-pointer transition-all duration-200"
+                style={isActive ? ts.activeChip : ts.inactiveChip}
               >
                 <input
                   type="checkbox"
@@ -159,11 +149,9 @@ export default function SearchPanel() {
                   onChange={() => dispatch({ type: 'TOGGLE_SOURCE', payload: source })}
                   className="sr-only"
                 />
-                <span className={`w-3.5 h-3.5 rounded flex items-center justify-center transition-all duration-200 ${
-                  isActive
-                    ? 'bg-current/20'
-                    : 'border border-surface-300 dark:border-surface-600'
-                }`}>
+                <span className="w-3.5 h-3.5 rounded flex items-center justify-center transition-all duration-200"
+                  style={isActive ? { background: ts.primaryBg } : { border: `1px solid ${ts.borderColorStrong}` }}
+                >
                   {isActive && (
                     <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
                       <path d="M1.5 4.5L3.5 6.5L7.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -181,19 +169,21 @@ export default function SearchPanel() {
       <div className="px-5 pb-4">
         <div className="flex gap-2">
           <div className="flex-1 relative group">
-            <Link size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-300 dark:text-surface-500 group-focus-within:text-primary-500 transition-colors" />
+            <Link size={14} className="absolute left-3 top-1/2 -translate-y-1/2 transition-colors" style={{ color: ts.textFaint }} />
             <input
               type="url"
               value={customUrlInput}
               onChange={(e) => setCustomUrlInput(e.target.value)}
               placeholder="Add a custom source URL..."
-              className="w-full pl-9 pr-3 py-2 text-[13px] rounded-xl border border-surface-200/60 dark:border-surface-700/30 bg-white/40 dark:bg-white/3 text-surface-700 dark:text-surface-300 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400/50 transition-all duration-200"
+              className="w-full pl-9 pr-3 py-2 text-[13px] focus:outline-none focus:ring-2 transition-all duration-200"
+              style={ts.inputStyle}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomUrl())}
             />
           </div>
           <button
             onClick={addCustomUrl}
-            className="px-3 py-2 rounded-xl bg-white/50 dark:bg-white/5 text-surface-400 hover:text-primary-500 border border-surface-200/50 dark:border-surface-700/20 hover:border-primary-200/50 transition-all duration-200 hover:bg-white/70 dark:hover:bg-white/8"
+            className="px-3 py-2 rounded-xl transition-all duration-200"
+            style={ts.inactiveChip}
           >
             <Plus size={15} />
           </button>
@@ -217,9 +207,10 @@ export default function SearchPanel() {
       <div className="px-5 pb-4">
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 text-[13px] text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 transition-all duration-200 group"
+          className="flex items-center gap-2 text-[13px] transition-all duration-200 group"
+          style={{ color: ts.textMuted }}
         >
-          <SlidersHorizontal size={13} className="group-hover:text-primary-500 transition-colors" />
+          <SlidersHorizontal size={13} className="transition-colors" />
           <span className="font-medium">Advanced Filters</span>
           {showFilters ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
         </button>
@@ -227,7 +218,7 @@ export default function SearchPanel() {
         {showFilters && (
           <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 animate-fade-in-up">
             <div>
-              <label className="block text-[10px] font-semibold text-surface-400 uppercase tracking-wider mb-1.5">From Year</label>
+              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1.5">From Year</label>
               <input
                 type="number"
                 min="1900"
@@ -239,7 +230,7 @@ export default function SearchPanel() {
               />
             </div>
             <div>
-              <label className="block text-[10px] font-semibold text-surface-400 uppercase tracking-wider mb-1.5">To Year</label>
+              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1.5">To Year</label>
               <input
                 type="number"
                 min="1900"
@@ -251,7 +242,7 @@ export default function SearchPanel() {
               />
             </div>
             <div>
-              <label className="block text-[10px] font-semibold text-surface-400 uppercase tracking-wider mb-1.5">Doc Type</label>
+              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1.5">Doc Type</label>
               <select
                 value={state.filters.documentType}
                 onChange={(e) => dispatch({ type: 'SET_FILTERS', payload: { documentType: e.target.value as DocumentType } })}
@@ -265,7 +256,7 @@ export default function SearchPanel() {
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-semibold text-surface-400 uppercase tracking-wider mb-1.5">Max Results</label>
+              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1.5">Max Results</label>
               <input
                 type="number"
                 min="5"

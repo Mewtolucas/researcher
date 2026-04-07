@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Copy, Download, BookOpen, FileText, BarChart3, Check, Sparkles } from 'lucide-react';
 import { useResearch } from '../context/ResearchContext';
+import { useThemeStyles } from '../utils/themeStyles';
 
 function renderContent(content: string): React.ReactNode {
   const lines = content.split('\n');
@@ -85,24 +86,19 @@ function renderInline(text: string): React.ReactNode {
 
 export default function ResultsDisplay() {
   const { state, dispatch } = useResearch();
+  const ts = useThemeStyles();
   const contentRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const session = state.currentSession;
 
   if (!session && !state.progress.isResearching) {
     return (
-      <div className="p-16 text-center animate-fade-in-up shadow-xl" style={{
-        background: `color-mix(in srgb, var(--theme-panel) calc(var(--theme-panel-opacity) * 100%), transparent)`,
-        backdropFilter: 'blur(16px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-        borderRadius: 'var(--theme-radius)',
-        border: `1px solid color-mix(in srgb, var(--theme-text) 8%, transparent)`,
-      }}>
-        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center" style={{ background: `color-mix(in srgb, var(--theme-primary) 10%, transparent)`, border: `1px solid color-mix(in srgb, var(--theme-primary) 15%, transparent)` }}>
-          <Sparkles size={28} style={{ color: 'var(--theme-primary)' }} />
+      <div className="p-16 text-center animate-fade-in-up shadow-xl" style={ts.panelStyle}>
+        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center" style={{ background: ts.primaryBg, border: `1px solid ${ts.primaryBorder}` }}>
+          <Sparkles size={28} style={{ color: ts.primary }} />
         </div>
-        <h2 className="text-xl font-bold text-surface-800 dark:text-surface-100 mb-3 tracking-tight">Start Your Research</h2>
-        <p className="text-surface-400 dark:text-surface-500 max-w-sm mx-auto text-sm leading-relaxed">
+        <h2 className="text-xl font-bold mb-3 tracking-tight" style={{ color: ts.text }}>Start Your Research</h2>
+        <p className="max-w-sm mx-auto text-sm leading-relaxed" style={{ color: ts.textMuted }}>
           Enter a research question, select your sources, and let AI synthesize findings with full academic citations.
         </p>
         <div className="flex items-center justify-center gap-6 mt-8">
@@ -112,10 +108,10 @@ export default function ResultsDisplay() {
             { icon: '3', text: 'Get insights' },
           ].map(step => (
             <div key={step.icon} className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shadow-lg" style={{ background: `linear-gradient(135deg, var(--theme-primary), var(--theme-accent))` }}>
+              <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shadow-lg" style={{ background: ts.gradient }}>
                 {step.icon}
               </span>
-              <span className="text-xs font-medium text-surface-400">{step.text}</span>
+              <span className="text-xs font-medium" style={{ color: ts.textMuted }}>{step.text}</span>
             </div>
           ))}
         </div>
@@ -144,22 +140,16 @@ export default function ResultsDisplay() {
   };
 
   return (
-    <div className="animate-fade-in-up overflow-hidden shadow-xl" style={{
-      background: `color-mix(in srgb, var(--theme-panel) calc(var(--theme-panel-opacity) * 100%), transparent)`,
-      backdropFilter: 'blur(16px) saturate(180%)',
-      WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-      borderRadius: 'var(--theme-radius)',
-      border: `1px solid color-mix(in srgb, var(--theme-text) 8%, transparent)`,
-    }}>
+    <div className="animate-fade-in-up overflow-hidden shadow-xl" style={ts.panelStyle}>
       {/* Header */}
-      <div className="px-6 py-4 border-b border-surface-200/30 dark:border-white/5 flex items-center justify-between flex-wrap gap-3 bg-white/30 dark:bg-white/[0.02]">
+      <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-3" style={{ ...ts.headerBorder, background: ts.hoverBg }}>
         <div className="flex items-center gap-4">
-          <h2 className="font-bold text-surface-800 dark:text-surface-100 tracking-tight">Research Results</h2>
+          <h2 className="font-bold tracking-tight" style={{ color: ts.text }}>Research Results</h2>
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 text-[11px] font-medium text-surface-400 bg-surface-100/60 dark:bg-surface-800/30 px-2.5 py-1 rounded-lg">
+            <span className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-lg" style={{ color: ts.textMuted, background: ts.hoverBg }}>
               <BarChart3 size={11} /> {resultCount} sources
             </span>
-            <span className="flex items-center gap-1.5 text-[11px] font-medium text-surface-400 bg-surface-100/60 dark:bg-surface-800/30 px-2.5 py-1 rounded-lg">
+            <span className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-lg" style={{ color: ts.textMuted, background: ts.hoverBg }}>
               <FileText size={11} /> {wordCount.toLocaleString()} words
             </span>
           </div>
@@ -167,21 +157,24 @@ export default function ResultsDisplay() {
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => dispatch({ type: 'TOGGLE_BIBLIOGRAPHY' })}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium rounded-xl bg-gradient-to-r from-primary-500/10 to-accent-500/5 text-primary-600 dark:text-primary-400 border border-primary-200/40 dark:border-primary-500/15 hover:from-primary-500/15 hover:to-accent-500/10 transition-all duration-200"
+            className="flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium rounded-xl transition-all duration-200"
+            style={ts.activeChip}
           >
             <BookOpen size={14} />
             Bibliography
           </button>
           <button
             onClick={copyToClipboard}
-            className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-white/5 text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 transition-all duration-200"
+            className="p-2 rounded-xl transition-all duration-200"
+            style={{ color: ts.textMuted }}
             title="Copy to clipboard"
           >
             {copied ? <Check size={15} className="text-emerald-500" /> : <Copy size={15} />}
           </button>
           <button
             onClick={downloadAsTxt}
-            className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-white/5 text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 transition-all duration-200"
+            className="p-2 rounded-xl transition-all duration-200"
+            style={{ color: ts.textMuted }}
             title="Download as text"
           >
             <Download size={15} />
@@ -193,10 +186,10 @@ export default function ResultsDisplay() {
       <div ref={contentRef} className="px-8 py-7 max-w-none overflow-y-auto max-h-[65vh]">
         {content ? renderContent(content) : (
           <div className="flex items-center gap-3 py-8">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-lg shadow-primary-500/20" style={{ animation: 'progressPulse 2s infinite' }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg" style={{ ...ts.gradientIcon, animation: 'progressPulse 2s infinite' }}>
               <Sparkles size={14} className="text-white" />
             </div>
-            <span className="text-sm text-surface-400 font-medium">Synthesizing research findings...</span>
+            <span className="text-sm font-medium" style={{ color: ts.textMuted }}>Synthesizing research findings...</span>
           </div>
         )}
       </div>

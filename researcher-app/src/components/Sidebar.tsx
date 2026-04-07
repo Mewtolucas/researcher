@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { History, Trash2, Moon, Sun, ChevronLeft, ChevronRight, Key, Sparkles, Palette } from 'lucide-react';
 import { useResearch } from '../context/ResearchContext';
+import { useThemeStyles } from '../utils/themeStyles';
 
 export default function Sidebar() {
   const { state, dispatch, loadSession } = useResearch();
+  const ts = useThemeStyles();
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState(state.apiKey);
 
@@ -14,25 +16,28 @@ export default function Sidebar() {
 
   if (!state.sidebarOpen) {
     return (
-      <div className="w-14 glass border-r border-white/20 dark:border-white/5 flex flex-col items-center py-5 gap-3 relative z-20">
+      <div className="w-14 flex flex-col items-center py-5 gap-3 relative z-20" style={ts.sidebarStyle}>
         <button
           onClick={() => dispatch({ type: 'TOGGLE_SIDEBAR' })}
-          className="p-2.5 rounded-xl hover:bg-white/50 dark:hover:bg-white/5 text-surface-500 dark:text-surface-400 transition-all duration-200 hover:scale-105"
+          className="p-2.5 rounded-xl transition-all duration-200 hover:scale-105"
+          style={{ color: ts.textMuted }}
           aria-label="Open sidebar"
         >
           <ChevronRight size={18} />
         </button>
-        <div className="w-6 h-px bg-surface-200 dark:bg-surface-700/50" />
+        <div className="w-6 h-px" style={{ background: ts.borderColor }} />
         <button
           onClick={() => dispatch({ type: 'TOGGLE_THEME_CUSTOMIZER' })}
-          className="p-2.5 rounded-xl hover:bg-white/50 dark:hover:bg-white/5 text-surface-500 dark:text-surface-400 transition-all duration-200 hover:scale-105"
+          className="p-2.5 rounded-xl transition-all duration-200 hover:scale-105"
+          style={{ color: ts.textMuted }}
           aria-label="Customize theme"
         >
           <Palette size={18} />
         </button>
         <button
           onClick={() => dispatch({ type: 'TOGGLE_DARK_MODE' })}
-          className="p-2.5 rounded-xl hover:bg-white/50 dark:hover:bg-white/5 text-surface-500 dark:text-surface-400 transition-all duration-200 hover:scale-105"
+          className="p-2.5 rounded-xl transition-all duration-200 hover:scale-105"
+          style={{ color: ts.textMuted }}
           aria-label="Toggle dark mode"
         >
           {state.preferences.darkMode ? <Sun size={18} /> : <Moon size={18} />}
@@ -42,21 +47,22 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-[280px] glass border-r border-white/20 dark:border-white/5 flex flex-col h-full relative z-20" aria-label="Research history sidebar">
+    <aside className="w-[280px] flex flex-col h-full relative z-20" style={ts.sidebarStyle} aria-label="Research history sidebar">
       {/* Header */}
       <div className="p-5 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg" style={{ background: `linear-gradient(135deg, var(--theme-primary), var(--theme-accent))`, boxShadow: `0 4px 12px color-mix(in srgb, var(--theme-primary) 25%, transparent)` }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg" style={ts.gradientIcon}>
             <Sparkles size={16} className="text-white" />
           </div>
           <div>
-            <h1 className="text-[15px] font-semibold tracking-tight text-surface-900 dark:text-white">Researcher</h1>
-            <p className="text-[10px] text-surface-400 font-medium tracking-wide uppercase">AI-Powered</p>
+            <h1 className="text-[15px] font-semibold tracking-tight" style={{ color: ts.text }}>Researcher</h1>
+            <p className="text-[10px] font-medium tracking-wide uppercase" style={{ color: ts.textFaint }}>AI-Powered</p>
           </div>
         </div>
         <button
           onClick={() => dispatch({ type: 'TOGGLE_SIDEBAR' })}
-          className="p-1.5 rounded-lg hover:bg-surface-200/50 dark:hover:bg-white/5 text-surface-400 transition-all duration-200"
+          className="p-1.5 rounded-lg transition-all duration-200"
+          style={{ color: ts.textMuted }}
           aria-label="Collapse sidebar"
         >
           <ChevronLeft size={16} />
@@ -66,19 +72,19 @@ export default function Sidebar() {
       {/* Research History */}
       <div className="flex-1 overflow-y-auto px-3 pb-3">
         <div className="flex items-center gap-2 mb-3 px-2">
-          <History size={13} className="text-surface-400" />
-          <span className="text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider">History</span>
-          <span className="ml-auto text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-100/80 dark:bg-primary-500/10 px-2 py-0.5 rounded-full">
+          <History size={13} style={{ color: ts.textMuted }} />
+          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: ts.textMuted }}>History</span>
+          <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ color: ts.primary, background: ts.primaryBg }}>
             {state.sessions.length}
           </span>
         </div>
 
         {state.sessions.length === 0 ? (
           <div className="px-3 py-8 text-center">
-            <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-surface-100 dark:bg-surface-800/50 flex items-center justify-center">
-              <History size={18} className="text-surface-300 dark:text-surface-600" />
+            <div className="w-10 h-10 mx-auto mb-3 rounded-xl flex items-center justify-center" style={{ background: ts.hoverBg }}>
+              <History size={18} style={{ color: ts.textFaint }} />
             </div>
-            <p className="text-xs text-surface-400 dark:text-surface-500 leading-relaxed">
+            <p className="text-xs leading-relaxed" style={{ color: ts.textMuted }}>
               Your research sessions will appear here
             </p>
           </div>
@@ -87,11 +93,11 @@ export default function Sidebar() {
             {state.sessions.map(session => (
               <div
                 key={session.id}
-                className={`group p-3 rounded-xl cursor-pointer transition-all duration-200 ${
-                  state.currentSession?.id === session.id
-                    ? 'bg-gradient-to-r from-primary-500/10 to-accent-500/5 dark:from-primary-500/15 dark:to-accent-500/5 shadow-sm shadow-primary-500/5'
-                    : 'hover:bg-white/60 dark:hover:bg-white/5'
-                }`}
+                className="group p-3 rounded-xl cursor-pointer transition-all duration-200"
+                style={state.currentSession?.id === session.id
+                  ? { background: ts.primaryBg, border: `1px solid ${ts.primaryBorder}` }
+                  : {}
+                }
                 onClick={() => loadSession(session)}
                 role="button"
                 tabIndex={0}
@@ -100,19 +106,19 @@ export default function Sidebar() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium text-surface-800 dark:text-surface-200 truncate leading-snug">
+                    <p className="text-[13px] font-medium truncate leading-snug" style={{ color: ts.text }}>
                       {session.name}
                     </p>
                     <div className="flex items-center gap-1.5 mt-1.5">
-                      <span className="text-[10px] text-surface-400 font-medium">
+                      <span className="text-[10px] font-medium" style={{ color: ts.textMuted }}>
                         {new Date(session.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
-                      <span className="w-0.5 h-0.5 rounded-full bg-surface-300 dark:bg-surface-600" />
-                      <span className="text-[10px] text-surface-400 font-medium">
+                      <span className="w-0.5 h-0.5 rounded-full" style={{ background: ts.textFaint }} />
+                      <span className="text-[10px] font-medium" style={{ color: ts.textMuted }}>
                         {session.results.length} sources
                       </span>
                     </div>
-                    <span className="inline-block mt-1.5 text-[10px] px-2 py-0.5 rounded-md bg-surface-100/80 dark:bg-surface-800/50 text-surface-500 dark:text-surface-400 font-medium">
+                    <span className="inline-block mt-1.5 text-[10px] px-2 py-0.5 rounded-md font-medium" style={{ background: ts.hoverBg, color: ts.textMuted }}>
                       {session.outputMode.replace('_', ' ')}
                     </span>
                   </div>
@@ -134,28 +140,30 @@ export default function Sidebar() {
       </div>
 
       {/* Footer */}
-      <div className="p-3 border-t border-surface-200/50 dark:border-white/5 space-y-2">
+      <div className="p-3 space-y-2" style={ts.footerBorder}>
         {showApiKeyInput && (
-          <div className="p-3 bg-white/60 dark:bg-surface-800/60 rounded-xl border border-surface-200/50 dark:border-white/5 space-y-2.5 animate-fade-in-up">
-            <label className="text-[11px] font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider">Claude API Key</label>
+          <div className="p-3 rounded-xl space-y-2.5 animate-fade-in-up" style={{ background: ts.hoverBg, border: `1px solid ${ts.borderColor}` }}>
+            <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: ts.textMuted }}>Claude API Key</label>
             <input
               type="password"
               value={apiKeyInput}
               onChange={(e) => setApiKeyInput(e.target.value)}
               placeholder="sk-ant-..."
-              className="w-full px-3 py-2 text-sm rounded-lg border border-surface-200 dark:border-surface-600/50 bg-white dark:bg-surface-900/50 text-surface-800 dark:text-surface-200 placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all duration-200"
+              className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
+              style={{ ...ts.inputStyle, '--tw-ring-color': ts.primaryBorder } as React.CSSProperties}
             />
             <div className="flex gap-2">
               <button
                 onClick={handleSaveApiKey}
-                className="flex-1 text-xs py-2 rounded-lg text-white font-medium hover:shadow-lg transition-all duration-200"
-                style={{ background: `linear-gradient(to right, var(--theme-primary), var(--theme-accent))` }}
+                className="flex-1 text-xs py-2 rounded-lg font-medium hover:shadow-lg transition-all duration-200"
+                style={ts.gradientButton}
               >
                 Save Key
               </button>
               <button
                 onClick={() => setShowApiKeyInput(false)}
-                className="flex-1 text-xs py-2 rounded-lg bg-surface-100 dark:bg-surface-800/50 text-surface-500 dark:text-surface-400 font-medium hover:bg-surface-200 dark:hover:bg-surface-700/50 transition-all duration-200"
+                className="flex-1 text-xs py-2 rounded-lg font-medium transition-all duration-200"
+                style={{ background: ts.hoverBg, color: ts.textMuted }}
               >
                 Cancel
               </button>
@@ -178,14 +186,16 @@ export default function Sidebar() {
           </button>
           <button
             onClick={() => dispatch({ type: 'TOGGLE_THEME_CUSTOMIZER' })}
-            className="p-2.5 rounded-xl hover:bg-surface-200/50 dark:hover:bg-white/5 text-surface-500 dark:text-surface-400 transition-all duration-200"
+            className="p-2.5 rounded-xl transition-all duration-200"
+            style={{ color: ts.textMuted }}
             aria-label="Customize theme"
           >
             <Palette size={15} />
           </button>
           <button
             onClick={() => dispatch({ type: 'TOGGLE_DARK_MODE' })}
-            className="p-2.5 rounded-xl hover:bg-surface-200/50 dark:hover:bg-white/5 text-surface-500 dark:text-surface-400 transition-all duration-200"
+            className="p-2.5 rounded-xl transition-all duration-200"
+            style={{ color: ts.textMuted }}
             aria-label="Toggle dark mode"
           >
             {state.preferences.darkMode ? <Sun size={15} /> : <Moon size={15} />}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Copy, Download, ExternalLink, Star, ChevronDown, ChevronUp, Check, BookMarked } from 'lucide-react';
 import { useResearch } from '../context/ResearchContext';
+import { useThemeStyles } from '../utils/themeStyles';
 import { CitationStyle, BibliographyEntry } from '../types';
 
 const CITATION_STYLES: CitationStyle[] = ['APA', 'MLA', 'Chicago', 'Harvard'];
@@ -125,6 +126,7 @@ function BibEntry({ entry, citationStyle, index }: { entry: BibliographyEntry; c
 
 export default function BibliographyPanel() {
   const { state, dispatch } = useResearch();
+  const ts = useThemeStyles();
   const [copiedAll, setCopiedAll] = useState(false);
   const session = state.currentSession;
 
@@ -170,62 +172,59 @@ export default function BibliographyPanel() {
   };
 
   return (
-    <div className="animate-fade-in-up overflow-hidden shadow-xl" style={{
-      background: `color-mix(in srgb, var(--theme-panel) calc(var(--theme-panel-opacity) * 100%), transparent)`,
-      backdropFilter: 'blur(16px) saturate(180%)',
-      WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-      borderRadius: 'var(--theme-radius)',
-      border: `1px solid color-mix(in srgb, var(--theme-text) 8%, transparent)`,
-    }}>
+    <div className="animate-fade-in-up overflow-hidden shadow-xl" style={ts.panelStyle}>
       {/* Header */}
-      <div className="px-6 py-4 border-b border-surface-200/30 dark:border-white/5 flex items-center justify-between bg-white/30 dark:bg-white/[0.02]">
+      <div className="px-6 py-4 flex items-center justify-between" style={{ ...ts.headerBorder, background: ts.hoverBg }}>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/10 to-orange-500/10 dark:from-amber-500/5 dark:to-orange-500/5 flex items-center justify-center border border-amber-200/30 dark:border-amber-500/10">
-            <BookMarked size={15} className="text-amber-500" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: ts.primaryBg, border: `1px solid ${ts.primaryBorder}` }}>
+            <BookMarked size={15} style={{ color: ts.primary }} />
           </div>
           <div>
-            <h2 className="font-bold text-surface-800 dark:text-surface-100 tracking-tight text-[15px]">
+            <h2 className="font-bold tracking-tight text-[15px]" style={{ color: ts.text }}>
               Annotated Bibliography
             </h2>
-            <span className="text-[10px] text-surface-400 font-medium">
+            <span className="text-[10px] font-medium" style={{ color: ts.textMuted }}>
               {bibliography.length} sources cited
             </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center bg-white/50 dark:bg-white/5 rounded-xl border border-surface-200/40 dark:border-white/5 p-0.5">
+          <div className="flex items-center rounded-xl p-0.5" style={{ background: ts.hoverBg, border: `1px solid ${ts.borderColor}` }}>
             {CITATION_STYLES.map(style => (
               <button
                 key={style}
                 onClick={() => dispatch({ type: 'SET_CITATION_STYLE', payload: style })}
                 className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all duration-200"
                 style={state.citationStyle === style
-                  ? { background: `linear-gradient(to right, var(--theme-primary), var(--theme-accent))`, color: '#fff' }
-                  : { color: 'var(--theme-text)', opacity: 0.4 }
+                  ? { background: ts.gradient, color: '#fff' }
+                  : { color: ts.textMuted }
                 }
               >
                 {style}
               </button>
             ))}
           </div>
-          <div className="w-px h-5 bg-surface-200/50 dark:bg-white/5" />
+          <div className="w-px h-5" style={{ background: ts.borderColor }} />
           <button
             onClick={copyAllCitations}
-            className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-white/5 text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 transition-all duration-200"
+            className="p-2 rounded-xl transition-all duration-200"
+            style={{ color: ts.textMuted }}
             title="Copy all citations"
           >
             {copiedAll ? <Check size={15} className="text-emerald-500" /> : <Copy size={15} />}
           </button>
           <button
             onClick={downloadBibliography}
-            className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-white/5 text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 transition-all duration-200"
+            className="p-2 rounded-xl transition-all duration-200"
+            style={{ color: ts.textMuted }}
             title="Download bibliography"
           >
             <Download size={15} />
           </button>
           <button
             onClick={() => dispatch({ type: 'TOGGLE_BIBLIOGRAPHY' })}
-            className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-white/5 text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 transition-all duration-200"
+            className="p-2 rounded-xl transition-all duration-200"
+            style={{ color: ts.textMuted }}
           >
             <X size={15} />
           </button>
