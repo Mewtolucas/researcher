@@ -36,7 +36,13 @@ export default function ProgressPanel() {
   };
 
   return (
-    <div className="glass rounded-2xl border border-white/30 dark:border-white/5 shadow-xl shadow-surface-900/5 dark:shadow-black/20 p-5 animate-fade-in-up overflow-hidden relative">
+    <div className="p-5 animate-fade-in-up overflow-hidden relative shadow-xl" style={{
+      background: `color-mix(in srgb, var(--theme-panel) calc(var(--theme-panel-opacity) * 100%), transparent)`,
+      backdropFilter: 'blur(16px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+      borderRadius: 'var(--theme-radius)',
+      border: `1px solid color-mix(in srgb, var(--theme-text) 8%, transparent)`,
+    }}>
       {/* Shimmer overlay when researching */}
       {progress.isResearching && (
         <div className="absolute inset-0 animate-shimmer pointer-events-none" />
@@ -44,7 +50,7 @@ export default function ProgressPanel() {
 
       <div className="flex items-center gap-3 mb-4 relative">
         {progress.isResearching ? (
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-lg shadow-primary-500/20" style={{ animation: 'progressPulse 2s infinite' }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg" style={{ background: `linear-gradient(135deg, var(--theme-primary), var(--theme-accent))`, animation: 'progressPulse 2s infinite' }}>
             <Sparkles size={15} className="text-white" />
           </div>
         ) : progress.currentPhase === 'complete' ? (

@@ -77,12 +77,37 @@ export interface ResearchProgress {
   statusMessage: string;
 }
 
+export interface GradientStop {
+  color: string;
+  position: number;
+}
+
+export interface ThemeConfig {
+  primaryColor: string;
+  accentColor: string;
+  backgroundColor: string;
+  backgroundGradient: {
+    enabled: boolean;
+    type: 'linear' | 'radial';
+    angle: number;
+    stops: GradientStop[];
+  };
+  panelColor: string;
+  panelOpacity: number;
+  textColor: string;
+  borderRadius: number;
+}
+
+export type ThemePresetName = 'default' | 'midnight' | 'ocean' | 'sunset' | 'forest' | 'lavender' | 'rose' | 'monochrome';
+
 export interface UserPreferences {
   defaultSources: SourceType[];
   defaultCitationStyle: CitationStyle;
   defaultFilters: SearchFilters;
   darkMode: boolean;
   defaultOutputMode: OutputMode;
+  theme: ThemeConfig;
+  themePreset: ThemePresetName;
 }
 
 export interface AppState {
@@ -98,5 +123,6 @@ export interface AppState {
   preferences: UserPreferences;
   sidebarOpen: boolean;
   bibliographyPanelOpen: boolean;
+  themeCustomizerOpen: boolean;
   apiKey: string;
 }

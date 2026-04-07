@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { History, Trash2, Moon, Sun, ChevronLeft, ChevronRight, Key, Sparkles } from 'lucide-react';
+import { History, Trash2, Moon, Sun, ChevronLeft, ChevronRight, Key, Sparkles, Palette } from 'lucide-react';
 import { useResearch } from '../context/ResearchContext';
 
 export default function Sidebar() {
@@ -24,6 +24,13 @@ export default function Sidebar() {
         </button>
         <div className="w-6 h-px bg-surface-200 dark:bg-surface-700/50" />
         <button
+          onClick={() => dispatch({ type: 'TOGGLE_THEME_CUSTOMIZER' })}
+          className="p-2.5 rounded-xl hover:bg-white/50 dark:hover:bg-white/5 text-surface-500 dark:text-surface-400 transition-all duration-200 hover:scale-105"
+          aria-label="Customize theme"
+        >
+          <Palette size={18} />
+        </button>
+        <button
           onClick={() => dispatch({ type: 'TOGGLE_DARK_MODE' })}
           className="p-2.5 rounded-xl hover:bg-white/50 dark:hover:bg-white/5 text-surface-500 dark:text-surface-400 transition-all duration-200 hover:scale-105"
           aria-label="Toggle dark mode"
@@ -39,7 +46,7 @@ export default function Sidebar() {
       {/* Header */}
       <div className="p-5 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-lg shadow-primary-500/20">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg" style={{ background: `linear-gradient(135deg, var(--theme-primary), var(--theme-accent))`, boxShadow: `0 4px 12px color-mix(in srgb, var(--theme-primary) 25%, transparent)` }}>
             <Sparkles size={16} className="text-white" />
           </div>
           <div>
@@ -141,7 +148,8 @@ export default function Sidebar() {
             <div className="flex gap-2">
               <button
                 onClick={handleSaveApiKey}
-                className="flex-1 text-xs py-2 rounded-lg bg-gradient-to-r from-primary-600 to-accent-600 text-white font-medium hover:shadow-lg hover:shadow-primary-500/20 transition-all duration-200"
+                className="flex-1 text-xs py-2 rounded-lg text-white font-medium hover:shadow-lg transition-all duration-200"
+                style={{ background: `linear-gradient(to right, var(--theme-primary), var(--theme-accent))` }}
               >
                 Save Key
               </button>
@@ -167,6 +175,13 @@ export default function Sidebar() {
             <Key size={14} />
             <span>{state.apiKey ? 'API Key Set' : 'Set API Key'}</span>
             {state.apiKey && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+          </button>
+          <button
+            onClick={() => dispatch({ type: 'TOGGLE_THEME_CUSTOMIZER' })}
+            className="p-2.5 rounded-xl hover:bg-surface-200/50 dark:hover:bg-white/5 text-surface-500 dark:text-surface-400 transition-all duration-200"
+            aria-label="Customize theme"
+          >
+            <Palette size={15} />
           </button>
           <button
             onClick={() => dispatch({ type: 'TOGGLE_DARK_MODE' })}

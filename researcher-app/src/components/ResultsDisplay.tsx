@@ -91,9 +91,15 @@ export default function ResultsDisplay() {
 
   if (!session && !state.progress.isResearching) {
     return (
-      <div className="glass rounded-2xl border border-white/30 dark:border-white/5 shadow-xl shadow-surface-900/5 dark:shadow-black/20 p-16 text-center animate-fade-in-up">
-        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary-500/10 to-accent-500/10 dark:from-primary-500/5 dark:to-accent-500/5 flex items-center justify-center border border-primary-200/30 dark:border-primary-500/10">
-          <Sparkles size={28} className="text-primary-400 dark:text-primary-500" />
+      <div className="p-16 text-center animate-fade-in-up shadow-xl" style={{
+        background: `color-mix(in srgb, var(--theme-panel) calc(var(--theme-panel-opacity) * 100%), transparent)`,
+        backdropFilter: 'blur(16px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+        borderRadius: 'var(--theme-radius)',
+        border: `1px solid color-mix(in srgb, var(--theme-text) 8%, transparent)`,
+      }}>
+        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center" style={{ background: `color-mix(in srgb, var(--theme-primary) 10%, transparent)`, border: `1px solid color-mix(in srgb, var(--theme-primary) 15%, transparent)` }}>
+          <Sparkles size={28} style={{ color: 'var(--theme-primary)' }} />
         </div>
         <h2 className="text-xl font-bold text-surface-800 dark:text-surface-100 mb-3 tracking-tight">Start Your Research</h2>
         <p className="text-surface-400 dark:text-surface-500 max-w-sm mx-auto text-sm leading-relaxed">
@@ -106,7 +112,7 @@ export default function ResultsDisplay() {
             { icon: '3', text: 'Get insights' },
           ].map(step => (
             <div key={step.icon} className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 text-white text-[11px] font-bold flex items-center justify-center shadow-lg shadow-primary-500/20">
+              <span className="w-6 h-6 rounded-full text-white text-[11px] font-bold flex items-center justify-center shadow-lg" style={{ background: `linear-gradient(135deg, var(--theme-primary), var(--theme-accent))` }}>
                 {step.icon}
               </span>
               <span className="text-xs font-medium text-surface-400">{step.text}</span>
@@ -138,7 +144,13 @@ export default function ResultsDisplay() {
   };
 
   return (
-    <div className="glass rounded-2xl border border-white/30 dark:border-white/5 shadow-xl shadow-surface-900/5 dark:shadow-black/20 animate-fade-in-up overflow-hidden">
+    <div className="animate-fade-in-up overflow-hidden shadow-xl" style={{
+      background: `color-mix(in srgb, var(--theme-panel) calc(var(--theme-panel-opacity) * 100%), transparent)`,
+      backdropFilter: 'blur(16px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+      borderRadius: 'var(--theme-radius)',
+      border: `1px solid color-mix(in srgb, var(--theme-text) 8%, transparent)`,
+    }}>
       {/* Header */}
       <div className="px-6 py-4 border-b border-surface-200/30 dark:border-white/5 flex items-center justify-between flex-wrap gap-3 bg-white/30 dark:bg-white/[0.02]">
         <div className="flex items-center gap-4">

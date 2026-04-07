@@ -67,9 +67,15 @@ export default function SearchPanel() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="glass rounded-2xl border border-white/30 dark:border-white/5 shadow-xl shadow-surface-900/5 dark:shadow-black/20 animate-fade-in-up overflow-hidden">
+    <div className="animate-fade-in-up overflow-hidden shadow-xl" style={{
+      background: `color-mix(in srgb, var(--theme-panel) calc(var(--theme-panel-opacity) * 100%), transparent)`,
+      backdropFilter: 'blur(16px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+      borderRadius: 'var(--theme-radius)',
+      border: `1px solid color-mix(in srgb, var(--theme-text) 8%, transparent)`,
+    }}>
       {/* Subtle gradient accent at top */}
-      <div className="h-[2px] bg-gradient-to-r from-transparent via-primary-500/50 to-transparent" />
+      <div className="h-[2px]" style={{ background: `linear-gradient(to right, transparent, color-mix(in srgb, var(--theme-primary) 50%, transparent), transparent)` }} />
 
       {/* Search Input */}
       <form onSubmit={handleSubmit} className="p-5 pb-4">
@@ -88,7 +94,12 @@ export default function SearchPanel() {
           <button
             type="submit"
             disabled={!state.currentQuery.trim() || state.progress.isResearching}
-            className="group/btn px-6 py-3.5 bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-500 hover:to-accent-500 disabled:from-surface-300 disabled:to-surface-300 dark:disabled:from-surface-700 dark:disabled:to-surface-700 text-white rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 self-start disabled:cursor-not-allowed shadow-lg shadow-primary-500/20 hover:shadow-xl hover:shadow-primary-500/30 disabled:shadow-none hover:scale-[1.02] active:scale-[0.98]"
+            className="group/btn px-6 py-3.5 text-white disabled:opacity-40 font-semibold text-sm transition-all duration-300 flex items-center gap-2 self-start disabled:cursor-not-allowed shadow-lg hover:shadow-xl disabled:shadow-none hover:scale-[1.02] active:scale-[0.98]"
+            style={{
+              background: (!state.currentQuery.trim() || state.progress.isResearching) ? '#94a3b8' : `linear-gradient(to right, var(--theme-primary), var(--theme-accent))`,
+              borderRadius: 'var(--theme-radius)',
+              boxShadow: (!state.currentQuery.trim() || state.progress.isResearching) ? 'none' : `0 8px 20px color-mix(in srgb, var(--theme-primary) 25%, transparent)`,
+            }}
           >
             {state.progress.isResearching ? (
               <>

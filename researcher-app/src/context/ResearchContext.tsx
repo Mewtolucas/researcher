@@ -2,10 +2,11 @@ import React, { createContext, useContext, useReducer, useEffect, useCallback } 
 import {
   AppState, ResearchSession, OutputMode, CitationStyle, SourceType,
   SearchFilters, ResearchProgress, SourceQueryStatus, BibliographyEntry, SourceResult,
+  ThemeConfig, ThemePresetName,
 } from '../types';
 import {
   loadSessions, saveSessions, loadPreferences, savePreferences,
-  loadApiKey, saveApiKey, generateId,
+  loadApiKey, saveApiKey, generateId, themePresets,
 } from '../utils/storage';
 import { generateAllCitations } from '../utils/citations';
 import { sourceSearchMap, fetchCustomUrl } from '../services/sourceSearch';
@@ -29,6 +30,9 @@ type Action =
   | { type: 'TOGGLE_SIDEBAR' }
   | { type: 'TOGGLE_BIBLIOGRAPHY' }
   | { type: 'TOGGLE_DARK_MODE' }
+  | { type: 'TOGGLE_THEME_CUSTOMIZER' }
+  | { type: 'SET_THEME'; payload: ThemeConfig }
+  | { type: 'SET_THEME_PRESET'; payload: ThemePresetName }
   | { type: 'SET_GENERATED_CONTENT'; payload: string };
 
 const prefs = loadPreferences();
@@ -52,6 +56,7 @@ const initialState: AppState = {
   preferences: prefs,
   sidebarOpen: true,
   bibliographyPanelOpen: false,
+  themeCustomizerOpen: false,
   apiKey: loadApiKey(),
 };
 
@@ -110,6 +115,23 @@ function reducer(state: AppState, action: Action): AppState {
       const darkMode = !state.preferences.darkMode;
       return { ...state, preferences: { ...state.preferences, darkMode } };
     }
+    case 'TOGGLE_THEME_CUSTOMIZER':
+      return { ...state, themeCustomizerOpen: !state.themeCustomizerOpen };
+    case 'SET_THEME':
+      return { ...state, preferences: { ...state.preferences, theme: action.payload, themePreset: 'default' as ThemePresetName } };
+    case 'SET_THEME_PRESET': {
+      const preset = themePresets[action.payload];
+      if (!preset) return state;
+      return {
+        ...state,
+        preferences: {
+          ...state.preferences,
+          theme: preset.theme,
+          themePreset: action.payload,
+          darkMode: preset.darkMode,
+        },
+      };
+    }
     case 'SET_GENERATED_CONTENT': {
       if (!state.currentSession) return state;
       const updated = { ...state.currentSession, generatedContent: action.payload };
@@ -139,10 +161,35 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     savePreferences(state.preferences);
+    const root = document.documentElement;
+
     if (state.preferences.darkMode) {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
+    }
+
+    // Apply theme CSS custom properties
+    const t = state.preferences.theme;
+    root.style.setProperty('--theme-primary', t.primaryColor);
+    root.style.setProperty('--theme-accent', t.accentColor);
+    root.style.setProperty('--theme-bg', t.backgroundColor);
+    root.style.setProperty('--theme-panel', t.panelColor);
+    root.style.setProperty('--theme-panel-opacity', t.panelOpacity.toString());
+    root.style.setProperty('--theme-text', t.textColor);
+    root.style.setProperty('--theme-radius', `${t.borderRadius}px`);
+
+    // Apply background
+    if (t.backgroundGradient.enabled) {
+      const stops = t.backgroundGradient.stops
+        .map(s => `${s.color} ${s.position}%`)
+        .join(', ');
+      const grad = t.backgroundGradient.type === 'radial'
+        ? `radial-gradient(ellipse at center, ${stops})`
+        : `linear-gradient(${t.backgroundGradient.angle}deg, ${stops})`;
+      root.style.setProperty('--theme-bg-gradient', grad);
+    } else {
+      root.style.setProperty('--theme-bg-gradient', t.backgroundColor);
     }
   }, [state.preferences]);
 

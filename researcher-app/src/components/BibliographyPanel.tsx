@@ -170,7 +170,13 @@ export default function BibliographyPanel() {
   };
 
   return (
-    <div className="glass rounded-2xl border border-white/30 dark:border-white/5 shadow-xl shadow-surface-900/5 dark:shadow-black/20 animate-fade-in-up overflow-hidden">
+    <div className="animate-fade-in-up overflow-hidden shadow-xl" style={{
+      background: `color-mix(in srgb, var(--theme-panel) calc(var(--theme-panel-opacity) * 100%), transparent)`,
+      backdropFilter: 'blur(16px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+      borderRadius: 'var(--theme-radius)',
+      border: `1px solid color-mix(in srgb, var(--theme-text) 8%, transparent)`,
+    }}>
       {/* Header */}
       <div className="px-6 py-4 border-b border-surface-200/30 dark:border-white/5 flex items-center justify-between bg-white/30 dark:bg-white/[0.02]">
         <div className="flex items-center gap-3">
@@ -192,11 +198,11 @@ export default function BibliographyPanel() {
               <button
                 key={style}
                 onClick={() => dispatch({ type: 'SET_CITATION_STYLE', payload: style })}
-                className={`text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all duration-200 ${
-                  state.citationStyle === style
-                    ? 'bg-gradient-to-r from-primary-500 to-accent-500 text-white shadow-sm shadow-primary-500/20'
-                    : 'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300'
-                }`}
+                className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all duration-200"
+                style={state.citationStyle === style
+                  ? { background: `linear-gradient(to right, var(--theme-primary), var(--theme-accent))`, color: '#fff' }
+                  : { color: 'var(--theme-text)', opacity: 0.4 }
+                }
               >
                 {style}
               </button>
