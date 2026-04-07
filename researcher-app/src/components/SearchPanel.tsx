@@ -17,15 +17,6 @@ const SOURCE_LABELS: Record<SourceType, string> = {
   custom_url: 'Custom URL',
 };
 
-const SOURCE_COLORS: Record<SourceType, string> = {
-  google_scholar: 'from-blue-500/10 to-blue-600/5 text-blue-700 dark:text-blue-300 border-blue-200/50 dark:border-blue-500/20',
-  core: 'from-orange-500/10 to-orange-600/5 text-orange-700 dark:text-orange-300 border-orange-200/50 dark:border-orange-500/20',
-  internet_archive: 'from-emerald-500/10 to-emerald-600/5 text-emerald-700 dark:text-emerald-300 border-emerald-200/50 dark:border-emerald-500/20',
-  doaj: 'from-amber-500/10 to-amber-600/5 text-amber-700 dark:text-amber-300 border-amber-200/50 dark:border-amber-500/20',
-  pmc: 'from-cyan-500/10 to-cyan-600/5 text-cyan-700 dark:text-cyan-300 border-cyan-200/50 dark:border-cyan-500/20',
-  web_search: 'from-violet-500/10 to-violet-600/5 text-violet-700 dark:text-violet-300 border-violet-200/50 dark:border-violet-500/20',
-  custom_url: 'from-pink-500/10 to-pink-600/5 text-pink-700 dark:text-pink-300 border-pink-200/50 dark:border-pink-500/20',
-};
 
 const OUTPUT_MODE_CONFIG: { mode: OutputMode; label: string; icon: React.ReactNode; desc: string }[] = [
   { mode: 'thesis', label: 'Thesis Paper', icon: <FileText size={15} />, desc: 'Full thesis-style paper' },
@@ -203,6 +194,41 @@ export default function SearchPanel() {
         )}
       </div>
 
+      {/* Source Count Selector */}
+      <div className="px-5 pb-4">
+        <p className="text-[10px] font-semibold uppercase tracking-wider mb-2.5 px-0.5" style={{ color: ts.textMuted }}>Number of Sources</p>
+        <div className="flex items-center gap-3">
+          <div className="flex gap-1.5 flex-wrap">
+            {[null, 5, 10, 15, 20, 30].map(count => (
+              <button
+                key={count ?? 'auto'}
+                onClick={() => dispatch({ type: 'SET_FILTERS', payload: { exactSourceCount: count } })}
+                className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all duration-200"
+                style={state.filters.exactSourceCount === count ? ts.activeChip : ts.inactiveChip}
+              >
+                {count === null ? 'Auto' : count}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-medium" style={{ color: ts.textFaint }}>Custom:</span>
+            <input
+              type="number"
+              min="1"
+              max="100"
+              value={state.filters.exactSourceCount && ![5, 10, 15, 20, 30].includes(state.filters.exactSourceCount) ? state.filters.exactSourceCount : ''}
+              onChange={(e) => {
+                const val = e.target.value ? parseInt(e.target.value) : null;
+                dispatch({ type: 'SET_FILTERS', payload: { exactSourceCount: val } });
+              }}
+              placeholder="#"
+              className="w-14 px-2 py-1.5 text-[12px] text-center rounded-lg focus:outline-none transition-all duration-200"
+              style={ts.inputStyle}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Filters Toggle */}
       <div className="px-5 pb-4">
         <button
@@ -218,7 +244,7 @@ export default function SearchPanel() {
         {showFilters && (
           <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 animate-fade-in-up">
             <div>
-              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1.5">From Year</label>
+              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: ts.textMuted }}>From Year</label>
               <input
                 type="number"
                 min="1900"
@@ -226,11 +252,12 @@ export default function SearchPanel() {
                 value={state.filters.dateFrom || ''}
                 onChange={(e) => dispatch({ type: 'SET_FILTERS', payload: { dateFrom: e.target.value ? parseInt(e.target.value) : null } })}
                 placeholder="1900"
-                className="w-full px-3 py-2 text-[13px] rounded-xl border border-surface-200/60 dark:border-surface-700/30 bg-white/40 dark:bg-white/3 text-surface-700 dark:text-surface-300 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400/50 transition-all duration-200"
+                className="w-full px-3 py-2 text-[13px] focus:outline-none focus:ring-2 transition-all duration-200"
+                style={ts.inputStyle}
               />
             </div>
             <div>
-              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1.5">To Year</label>
+              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: ts.textMuted }}>To Year</label>
               <input
                 type="number"
                 min="1900"
@@ -238,15 +265,17 @@ export default function SearchPanel() {
                 value={state.filters.dateTo || ''}
                 onChange={(e) => dispatch({ type: 'SET_FILTERS', payload: { dateTo: e.target.value ? parseInt(e.target.value) : null } })}
                 placeholder={currentYear.toString()}
-                className="w-full px-3 py-2 text-[13px] rounded-xl border border-surface-200/60 dark:border-surface-700/30 bg-white/40 dark:bg-white/3 text-surface-700 dark:text-surface-300 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400/50 transition-all duration-200"
+                className="w-full px-3 py-2 text-[13px] focus:outline-none focus:ring-2 transition-all duration-200"
+                style={ts.inputStyle}
               />
             </div>
             <div>
-              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1.5">Doc Type</label>
+              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: ts.textMuted }}>Doc Type</label>
               <select
                 value={state.filters.documentType}
                 onChange={(e) => dispatch({ type: 'SET_FILTERS', payload: { documentType: e.target.value as DocumentType } })}
-                className="w-full px-3 py-2 text-[13px] rounded-xl border border-surface-200/60 dark:border-surface-700/30 bg-white/40 dark:bg-white/3 text-surface-700 dark:text-surface-300 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400/50 transition-all duration-200 appearance-none"
+                className="w-full px-3 py-2 text-[13px] focus:outline-none focus:ring-2 transition-all duration-200 appearance-none"
+                style={ts.inputStyle}
               >
                 <option value="all">All Types</option>
                 <option value="peer_reviewed">Peer Reviewed</option>
@@ -256,14 +285,15 @@ export default function SearchPanel() {
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1.5">Max Results</label>
+              <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: ts.textMuted }}>Max per Source</label>
               <input
                 type="number"
                 min="5"
                 max="50"
                 value={state.filters.maxResults}
                 onChange={(e) => dispatch({ type: 'SET_FILTERS', payload: { maxResults: parseInt(e.target.value) || 20 } })}
-                className="w-full px-3 py-2 text-[13px] rounded-xl border border-surface-200/60 dark:border-surface-700/30 bg-white/40 dark:bg-white/3 text-surface-700 dark:text-surface-300 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400/50 transition-all duration-200"
+                className="w-full px-3 py-2 text-[13px] focus:outline-none focus:ring-2 transition-all duration-200"
+                style={ts.inputStyle}
               />
             </div>
           </div>

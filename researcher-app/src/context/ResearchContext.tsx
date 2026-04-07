@@ -10,7 +10,7 @@ import {
 } from '../utils/storage';
 import { generateAllCitations } from '../utils/citations';
 import { sourceSearchMap, fetchCustomUrl } from '../services/sourceSearch';
-import { synthesizeResearch, generateSearchQueries } from '../services/claudeApi';
+import { synthesizeResearch, generateSearchQueries, assessCredibility } from '../services/claudeApi';
 
 type Action =
   | { type: 'SET_QUERY'; payload: string }
@@ -31,9 +31,11 @@ type Action =
   | { type: 'TOGGLE_BIBLIOGRAPHY' }
   | { type: 'TOGGLE_DARK_MODE' }
   | { type: 'TOGGLE_THEME_CUSTOMIZER' }
+  | { type: 'TOGGLE_SOURCE_HIGHLIGHTING' }
   | { type: 'SET_THEME'; payload: ThemeConfig }
   | { type: 'SET_THEME_PRESET'; payload: ThemePresetName }
-  | { type: 'SET_GENERATED_CONTENT'; payload: string };
+  | { type: 'SET_GENERATED_CONTENT'; payload: string }
+  | { type: 'UPDATE_BIBLIOGRAPHY'; payload: BibliographyEntry[] };
 
 const prefs = loadPreferences();
 
@@ -57,6 +59,7 @@ const initialState: AppState = {
   sidebarOpen: true,
   bibliographyPanelOpen: false,
   themeCustomizerOpen: false,
+  sourceHighlighting: false,
   apiKey: loadApiKey(),
 };
 
@@ -117,6 +120,8 @@ function reducer(state: AppState, action: Action): AppState {
     }
     case 'TOGGLE_THEME_CUSTOMIZER':
       return { ...state, themeCustomizerOpen: !state.themeCustomizerOpen };
+    case 'TOGGLE_SOURCE_HIGHLIGHTING':
+      return { ...state, sourceHighlighting: !state.sourceHighlighting };
     case 'SET_THEME':
       return { ...state, preferences: { ...state.preferences, theme: action.payload, themePreset: 'default' as ThemePresetName } };
     case 'SET_THEME_PRESET': {
@@ -135,6 +140,12 @@ function reducer(state: AppState, action: Action): AppState {
     case 'SET_GENERATED_CONTENT': {
       if (!state.currentSession) return state;
       const updated = { ...state.currentSession, generatedContent: action.payload };
+      const sessions = state.sessions.map(s => s.id === updated.id ? updated : s);
+      return { ...state, currentSession: updated, sessions };
+    }
+    case 'UPDATE_BIBLIOGRAPHY': {
+      if (!state.currentSession) return state;
+      const updated = { ...state.currentSession, bibliography: action.payload };
       const sessions = state.sessions.map(s => s.id === updated.id ? updated : s);
       return { ...state, currentSession: updated, sessions };
     }
@@ -310,16 +321,50 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
       return true;
     });
 
+    // Enforce exact source count if set
+    const exactCount = state.filters.exactSourceCount;
+    if (exactCount && exactCount > 0 && allResults.length > exactCount) {
+      // Sort by relevance score (higher first), then trim
+      allResults.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+      allResults = allResults.slice(0, exactCount);
+    }
+
+    // Assess credibility of sources
+    dispatch({
+      type: 'SET_PROGRESS',
+      payload: {
+        currentPhase: 'evaluating',
+        overallProgress: 62,
+        statusMessage: 'Evaluating source credibility...',
+      },
+    });
+
+    let credibilityResults: import('../types').CredibilityAssessment[] = [];
+    try {
+      credibilityResults = await assessCredibility(allResults, state.apiKey);
+    } catch {
+      credibilityResults = allResults.map(() => ({
+        score: 5,
+        level: 'unknown' as const,
+        authorExpertise: 'Not assessed',
+        publicationType: 'Unknown',
+        peerReviewed: false,
+        journalReputation: 'Unknown',
+        methodology: 'Not assessed',
+        reasoning: 'Assessment unavailable.',
+      }));
+    }
+
     dispatch({
       type: 'SET_PROGRESS',
       payload: {
         currentPhase: 'synthesizing',
-        overallProgress: 65,
+        overallProgress: 70,
         statusMessage: 'Synthesizing research findings with Claude...',
       },
     });
 
-    // Synthesize with Claude API
+    // Synthesize with Claude API (with source tagging for highlighting)
     let generatedContent = '';
     try {
       generatedContent = await synthesizeResearch(
@@ -328,6 +373,7 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
           results: allResults,
           outputMode: state.outputMode,
           citationStyle: state.citationStyle,
+          sourceTagging: true,
         },
         state.apiKey,
         (chunk) => {
@@ -338,8 +384,8 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
       generatedContent = `## Research Results\n\nFound ${allResults.length} sources across ${state.selectedSources.length} databases.\n\n**Note:** ${err.message}\n\n### Sources Found\n\n${allResults.map((r, i) => `${i + 1}. **${r.title}** (${r.year || 'n.d.'})\n   ${r.authors.join(', ')}\n   ${r.abstract ? r.abstract.substring(0, 200) + '...' : 'No abstract available.'}\n   [Link](${r.url})`).join('\n\n')}`;
     }
 
-    // Generate bibliography
-    const bibliography: BibliographyEntry[] = allResults.map(r => ({
+    // Generate bibliography with credibility data
+    const bibliography: BibliographyEntry[] = allResults.map((r, idx) => ({
       id: generateId(),
       sourceResult: r,
       citation: generateAllCitations(r),
@@ -348,6 +394,7 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
       relevanceRating: r.relevanceScore > 0 ? Math.min(5, Math.ceil(r.relevanceScore / 20)) : 3,
       accessDate: new Date().toISOString().split('T')[0],
       accessStatus: 'accessible' as const,
+      credibility: credibilityResults[idx] || undefined,
     }));
 
     const session: ResearchSession = {

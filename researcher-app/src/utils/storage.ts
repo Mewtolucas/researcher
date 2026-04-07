@@ -10,6 +10,7 @@ const defaultFilters: SearchFilters = {
   documentType: 'all',
   language: 'en',
   maxResults: 20,
+  exactSourceCount: null,
 };
 
 export const defaultTheme: ThemeConfig = {

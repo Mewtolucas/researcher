@@ -1,4 +1,4 @@
-import { SourceResult, OutputMode, CitationStyle } from '../types';
+import { SourceResult, OutputMode, CitationStyle, CredibilityAssessment } from '../types';
 import { formatCitation } from '../utils/citations';
 
 interface SynthesisRequest {
@@ -6,6 +6,7 @@ interface SynthesisRequest {
   results: SourceResult[];
   outputMode: OutputMode;
   citationStyle: CitationStyle;
+  sourceTagging?: boolean;
 }
 
 const OUTPUT_MODE_PROMPTS: Record<OutputMode, string> = {
@@ -31,6 +32,10 @@ Use inline citations referencing sources by number [1], [2], etc.
 Keep the summary focused and accessible.`,
 };
 
+const SOURCE_TAG_INSTRUCTION = `
+
+IMPORTANT: For EVERY sentence that uses information from a source, you MUST wrap it with a source tag like this: <src id="1">sentence here</src> where the id is the source number. If a sentence draws from multiple sources, use comma-separated IDs: <src id="1,3">sentence here</src>. Sentences that are your own analysis or transitions don't need tags. This is critical for source highlighting.`;
+
 function buildSourceContext(results: SourceResult[], citationStyle: CitationStyle): string {
   return results
     .map((r, i) => {
@@ -52,9 +57,11 @@ export async function synthesizeResearch(
   const sourceContext = buildSourceContext(request.results, request.citationStyle);
   const systemPrompt = `You are an expert academic research assistant. You help synthesize research findings into well-structured academic content. Always cite sources using the provided reference numbers. Be thorough, accurate, and objective.`;
 
+  const tagInstruction = request.sourceTagging ? SOURCE_TAG_INSTRUCTION : '';
+
   const userMessage = `Research Question: ${request.query}
 
-${OUTPUT_MODE_PROMPTS[request.outputMode]}
+${OUTPUT_MODE_PROMPTS[request.outputMode]}${tagInstruction}
 
 Here are the sources found during research:
 
@@ -119,6 +126,98 @@ Please generate the requested output based on these sources. Ensure all claims a
   } catch (err: any) {
     if (err.message.includes('API key')) throw err;
     throw new Error(`Failed to synthesize research: ${err.message}`);
+  }
+}
+
+export async function assessCredibility(
+  results: SourceResult[],
+  apiKey: string
+): Promise<CredibilityAssessment[]> {
+  if (!apiKey || results.length === 0) {
+    return results.map(() => ({
+      score: 5,
+      level: 'unknown' as const,
+      authorExpertise: 'Unable to assess without API key',
+      publicationType: 'Unknown',
+      peerReviewed: false,
+      journalReputation: 'Unknown',
+      methodology: 'Not assessed',
+      reasoning: 'Credibility assessment requires an API key.',
+    }));
+  }
+
+  const sourceSummaries = results.map((r, i) =>
+    `[${i + 1}] Title: ${r.title}\nAuthors: ${r.authors.join(', ')}\nYear: ${r.year || 'Unknown'}\nSource Database: ${r.source}\nDocument Type: ${r.documentType}\nDOI: ${r.doi || 'None'}\nURL: ${r.url}\nAbstract: ${(r.abstract || 'None').substring(0, 300)}`
+  ).join('\n\n');
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 4000,
+        messages: [{
+          role: 'user',
+          content: `Assess the credibility of each academic source below. For each source, evaluate:
+1. Author expertise (are they likely experts based on name recognition, institutional affiliation if visible, publication context?)
+2. Publication type (peer-reviewed journal, preprint, book, encyclopedia, web page, etc.)
+3. Whether it's likely peer-reviewed
+4. Journal/publisher reputation (based on the source database and URL)
+5. Methodology quality (based on abstract if available)
+6. Overall credibility score (1-10, where 10 = highest credibility)
+7. Credibility level: "high" (8-10), "medium" (5-7), or "low" (1-4)
+
+Sources from PubMed Central (pmc) are always peer-reviewed. Sources from DOAJ are open-access and peer-reviewed. CORE aggregates from repositories (mixed). Internet Archive is mixed. Wikipedia (web_search) is not peer-reviewed. CrossRef/Google Scholar (google_scholar) links to published works, usually peer-reviewed.
+
+Return a JSON array with one object per source, in order. Each object:
+{"score": number, "level": "high"|"medium"|"low", "authorExpertise": "brief assessment", "publicationType": "type", "peerReviewed": boolean, "journalReputation": "brief assessment", "methodology": "brief assessment or N/A", "reasoning": "1-2 sentence summary"}
+
+Return ONLY the JSON array, no other text.
+
+Sources:
+
+${sourceSummaries}`,
+        }],
+      }),
+    });
+
+    if (!response.ok) throw new Error(`Credibility API error: ${response.status}`);
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '[]';
+
+    // Extract JSON from response (handle potential markdown code blocks)
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) throw new Error('No JSON array found');
+
+    const assessments: CredibilityAssessment[] = JSON.parse(jsonMatch[0]);
+    return assessments.map(a => ({
+      score: Math.max(1, Math.min(10, a.score || 5)),
+      level: (['high', 'medium', 'low'].includes(a.level) ? a.level : 'unknown') as 'high' | 'medium' | 'low' | 'unknown',
+      authorExpertise: a.authorExpertise || 'Not assessed',
+      publicationType: a.publicationType || 'Unknown',
+      peerReviewed: !!a.peerReviewed,
+      journalReputation: a.journalReputation || 'Not assessed',
+      methodology: a.methodology || 'Not assessed',
+      reasoning: a.reasoning || 'No assessment available',
+    }));
+  } catch (err) {
+    console.error('Credibility assessment failed:', err);
+    return results.map(() => ({
+      score: 5,
+      level: 'unknown' as const,
+      authorExpertise: 'Assessment failed',
+      publicationType: 'Unknown',
+      peerReviewed: false,
+      journalReputation: 'Unknown',
+      methodology: 'Not assessed',
+      reasoning: 'Credibility assessment encountered an error.',
+    }));
   }
 }
 

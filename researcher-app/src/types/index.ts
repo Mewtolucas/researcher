@@ -19,6 +19,7 @@ export interface SearchFilters {
   documentType: DocumentType;
   language: string;
   maxResults: number;
+  exactSourceCount: number | null;
 }
 
 export interface SourceResult {
@@ -35,6 +36,17 @@ export interface SourceResult {
   fullText?: string;
 }
 
+export interface CredibilityAssessment {
+  score: number; // 1-10
+  level: 'high' | 'medium' | 'low' | 'unknown';
+  authorExpertise: string;
+  publicationType: string;
+  peerReviewed: boolean;
+  journalReputation: string;
+  methodology: string;
+  reasoning: string;
+}
+
 export interface BibliographyEntry {
   id: string;
   sourceResult: SourceResult;
@@ -44,6 +56,7 @@ export interface BibliographyEntry {
   relevanceRating: number;
   accessDate: string;
   accessStatus: 'accessible' | 'restricted' | 'unavailable';
+  credibility?: CredibilityAssessment;
 }
 
 export interface ResearchSession {
@@ -71,7 +84,7 @@ export interface SourceQueryStatus {
 
 export interface ResearchProgress {
   isResearching: boolean;
-  currentPhase: 'idle' | 'searching' | 'processing' | 'synthesizing' | 'complete' | 'error';
+  currentPhase: 'idle' | 'searching' | 'processing' | 'synthesizing' | 'evaluating' | 'complete' | 'error';
   sourceStatuses: SourceQueryStatus[];
   overallProgress: number;
   statusMessage: string;
@@ -124,5 +137,6 @@ export interface AppState {
   sidebarOpen: boolean;
   bibliographyPanelOpen: boolean;
   themeCustomizerOpen: boolean;
+  sourceHighlighting: boolean;
   apiKey: string;
 }
