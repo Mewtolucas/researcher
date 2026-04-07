@@ -360,11 +360,13 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
       payload: {
         currentPhase: 'synthesizing',
         overallProgress: 70,
-        statusMessage: 'Synthesizing research findings with Claude...',
+        statusMessage: state.apiKey
+          ? 'Synthesizing research findings with Claude...'
+          : 'Compiling research findings...',
       },
     });
 
-    // Synthesize with Claude API (with source tagging for highlighting)
+    // Synthesize with Claude API (or local fallback if no API key)
     let generatedContent = '';
     try {
       generatedContent = await synthesizeResearch(
@@ -373,12 +375,12 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
           results: allResults,
           outputMode: state.outputMode,
           citationStyle: state.citationStyle,
-          sourceTagging: true,
+          sourceTagging: !!state.apiKey,
         },
         state.apiKey,
-        (chunk) => {
+        state.apiKey ? (chunk) => {
           dispatch({ type: 'SET_GENERATED_CONTENT', payload: chunk });
-        }
+        } : undefined
       );
     } catch (err: any) {
       generatedContent = `## Research Results\n\nFound ${allResults.length} sources across ${state.selectedSources.length} databases.\n\n**Note:** ${err.message}\n\n### Sources Found\n\n${allResults.map((r, i) => `${i + 1}. **${r.title}** (${r.year || 'n.d.'})\n   ${r.authors.join(', ')}\n   ${r.abstract ? r.abstract.substring(0, 200) + '...' : 'No abstract available.'}\n   [Link](${r.url})`).join('\n\n')}`;

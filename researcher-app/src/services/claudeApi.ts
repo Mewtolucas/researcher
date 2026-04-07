@@ -51,7 +51,8 @@ export async function synthesizeResearch(
   onStream?: (chunk: string) => void
 ): Promise<string> {
   if (!apiKey) {
-    throw new Error('Claude API key is required. Please enter your API key in the settings.');
+    // Generate a structured output without AI
+    return generateLocalSynthesis(request);
   }
 
   const sourceContext = buildSourceContext(request.results, request.citationStyle);
@@ -129,21 +130,275 @@ Please generate the requested output based on these sources. Ensure all claims a
   }
 }
 
+/**
+ * Generate structured output locally without the Claude API.
+ * Groups sources by theme/topic based on keyword overlap and produces
+ * a formatted report with proper citations.
+ */
+function generateLocalSynthesis(request: SynthesisRequest): string {
+  const { query, results, outputMode } = request;
+  const lines: string[] = [];
+
+  if (results.length === 0) {
+    return `# Research Results\n\nNo sources were found for: "${query}"\n\nTry broadening your search terms or selecting more source databases.`;
+  }
+
+  const modeTitle: Record<OutputMode, string> = {
+    thesis: 'Research Paper',
+    evidence: 'Evidence Summary',
+    literature_review: 'Literature Review',
+    summary: 'Research Summary',
+  };
+
+  lines.push(`# ${modeTitle[outputMode]}: ${query}`);
+  lines.push('');
+  lines.push(`*Generated from ${results.length} sources across multiple databases. Add a Claude API key for AI-synthesized analysis with deeper insights.*`);
+  lines.push('');
+
+  // Overview section
+  lines.push('## Overview');
+  lines.push('');
+
+  // Group by source database
+  const bySource: Record<string, SourceResult[]> = {};
+  results.forEach(r => {
+    const key = r.source;
+    if (!bySource[key]) bySource[key] = [];
+    bySource[key].push(r);
+  });
+
+  const sourceLabels: Record<string, string> = {
+    google_scholar: 'CrossRef / Google Scholar',
+    core: 'CORE Academic',
+    internet_archive: 'Internet Archive',
+    doaj: 'DOAJ (Open Access)',
+    pmc: 'PubMed Central',
+    web_search: 'Wikipedia / Web',
+    custom_url: 'Custom Sources',
+  };
+
+  const sourceBreakdown = Object.entries(bySource)
+    .map(([src, items]) => `**${sourceLabels[src] || src}**: ${items.length} results`)
+    .join(' | ');
+
+  lines.push(`This research gathered ${results.length} sources. ${sourceBreakdown}`);
+  lines.push('');
+
+  // Year range
+  const years = results.map(r => r.year).filter((y): y is number => y !== null).sort();
+  if (years.length > 0) {
+    lines.push(`Sources span from **${years[0]}** to **${years[years.length - 1]}**.`);
+    lines.push('');
+  }
+
+  // Key Findings by Source
+  if (outputMode === 'evidence') {
+    lines.push('## Evidence by Source');
+    lines.push('');
+    results.forEach((r, i) => {
+      lines.push(`### [${i + 1}] ${r.title}`);
+      lines.push(`**Authors:** ${r.authors.length > 0 ? r.authors.join(', ') : 'Unknown'}`);
+      if (r.year) lines.push(`**Year:** ${r.year}`);
+      lines.push(`**Source:** ${sourceLabels[r.source] || r.source} | **Type:** ${r.documentType}`);
+      if (r.doi) lines.push(`**DOI:** ${r.doi}`);
+      lines.push('');
+      if (r.abstract) {
+        lines.push(`${r.abstract}`);
+      } else {
+        lines.push('*No abstract available for this source.*');
+      }
+      lines.push('');
+    });
+  } else if (outputMode === 'summary') {
+    lines.push('## Key Sources');
+    lines.push('');
+    results.forEach((r, i) => {
+      const abstractSnippet = r.abstract
+        ? r.abstract.length > 300 ? r.abstract.substring(0, 300) + '...' : r.abstract
+        : 'No abstract available.';
+      lines.push(`${i + 1}. **${r.title}** (${r.year || 'n.d.'}) [${i + 1}]`);
+      lines.push(`   ${r.authors.join(', ')}`);
+      lines.push(`   ${abstractSnippet}`);
+      lines.push('');
+    });
+  } else {
+    // thesis or literature_review
+    lines.push('## Sources and Findings');
+    lines.push('');
+
+    // Group by source type for literature review style
+    for (const [src, items] of Object.entries(bySource)) {
+      lines.push(`### ${sourceLabels[src] || src} (${items.length} sources)`);
+      lines.push('');
+      items.forEach(r => {
+        const idx = results.indexOf(r) + 1;
+        lines.push(`**${r.title}** (${r.year || 'n.d.'}) [${idx}]`);
+        lines.push(`*${r.authors.length > 0 ? r.authors.join(', ') : 'Unknown author(s)'}*`);
+        if (r.abstract) {
+          lines.push('');
+          lines.push(r.abstract);
+        }
+        if (r.doi) lines.push(`DOI: ${r.doi}`);
+        lines.push('');
+      });
+    }
+
+    lines.push('## Discussion');
+    lines.push('');
+    lines.push(`This collection of ${results.length} sources provides a foundation for research on "${query}". ` +
+      `Sources were gathered from ${Object.keys(bySource).length} different databases, ` +
+      `providing diverse perspectives on the topic.`);
+    lines.push('');
+
+    const peerReviewedCount = results.filter(r =>
+      r.source === 'pmc' || r.source === 'doaj' || r.documentType === 'peer_reviewed'
+    ).length;
+    if (peerReviewedCount > 0) {
+      lines.push(`**${peerReviewedCount}** of the sources are from peer-reviewed databases (PubMed Central, DOAJ), indicating strong academic credibility.`);
+      lines.push('');
+    }
+  }
+
+  lines.push('## References');
+  lines.push('');
+  results.forEach((r, i) => {
+    lines.push(`[${i + 1}] ${r.authors.join(', ')} (${r.year || 'n.d.'}). *${r.title}*. ${r.url}`);
+  });
+
+  return lines.join('\n');
+}
+
+/**
+ * Rule-based credibility assessment — works without any API key.
+ * Uses heuristics based on source database, document type, DOI presence,
+ * author count, abstract quality, and other metadata signals.
+ */
+export function assessCredibilityLocal(results: SourceResult[]): CredibilityAssessment[] {
+  return results.map(r => {
+    let score = 5;
+    const factors: string[] = [];
+
+    // Source database signals
+    if (r.source === 'pmc') {
+      score += 3;
+      factors.push('PubMed Central (peer-reviewed biomedical literature)');
+    } else if (r.source === 'doaj') {
+      score += 2;
+      factors.push('DOAJ (verified open-access, peer-reviewed journal)');
+    } else if (r.source === 'google_scholar') {
+      score += 1;
+      factors.push('CrossRef (registered scholarly publication)');
+    } else if (r.source === 'core') {
+      score += 1;
+      factors.push('CORE (academic repository, may include preprints)');
+    } else if (r.source === 'internet_archive') {
+      score -= 1;
+      factors.push('Internet Archive (mixed content, not peer-reviewed)');
+    } else if (r.source === 'web_search') {
+      score -= 2;
+      factors.push('Wikipedia (community-edited, not peer-reviewed)');
+    } else if (r.source === 'custom_url') {
+      factors.push('Custom URL (credibility varies)');
+    }
+
+    // DOI = registered with a standards body
+    if (r.doi) {
+      score += 1;
+      factors.push('Has DOI (registered publication)');
+    }
+
+    // Author signals
+    if (r.authors.length >= 3) {
+      score += 1;
+      factors.push(`${r.authors.length} authors (collaborative research)`);
+    } else if (r.authors.length === 0 || (r.authors.length === 1 && r.authors[0] === 'Unknown')) {
+      score -= 1;
+      factors.push('No identified authors');
+    }
+
+    // Abstract quality
+    if (r.abstract && r.abstract.length > 200) {
+      score += 1;
+      factors.push('Detailed abstract available');
+    } else if (!r.abstract || r.abstract.length < 30) {
+      score -= 1;
+      factors.push('No substantive abstract');
+    }
+
+    // Document type signals
+    const peerTypes = ['peer_reviewed', 'journal-article', 'journal article'];
+    if (peerTypes.some(t => r.documentType.toLowerCase().includes(t))) {
+      score += 1;
+      factors.push('Peer-reviewed document type');
+    } else if (['preprint', 'working-paper'].includes(r.documentType.toLowerCase())) {
+      factors.push('Preprint (not yet peer-reviewed)');
+    }
+
+    // Recency
+    const currentYear = new Date().getFullYear();
+    if (r.year && r.year >= currentYear - 5) {
+      factors.push(`Recent publication (${r.year})`);
+    } else if (r.year && r.year < currentYear - 20) {
+      factors.push(`Older publication (${r.year}) — may not reflect current knowledge`);
+    }
+
+    // Clamp score
+    score = Math.max(1, Math.min(10, score));
+
+    // Determine level
+    const level: 'high' | 'medium' | 'low' = score >= 8 ? 'high' : score >= 5 ? 'medium' : 'low';
+
+    // Determine peer review status
+    const peerReviewed = r.source === 'pmc' || r.source === 'doaj' ||
+      peerTypes.some(t => r.documentType.toLowerCase().includes(t));
+
+    // Publication type description
+    const pubType = r.source === 'pmc' ? 'Biomedical journal article'
+      : r.source === 'doaj' ? 'Open-access journal article'
+      : r.source === 'google_scholar' ? 'Scholarly publication'
+      : r.source === 'core' ? 'Academic repository item'
+      : r.source === 'internet_archive' ? 'Archived document/media'
+      : r.source === 'web_search' ? 'Encyclopedia article'
+      : 'Web page';
+
+    // Journal reputation
+    const journalRep = r.source === 'pmc' ? 'Indexed in PubMed Central (NLM/NIH)'
+      : r.source === 'doaj' ? 'Listed in Directory of Open Access Journals'
+      : r.doi ? 'DOI-registered publisher'
+      : 'Reputation not verified';
+
+    // Author expertise
+    const authorExpertise = r.authors.length === 0
+      ? 'No author information available'
+      : r.authors.length >= 3
+        ? `Collaborative work by ${r.authors.length} authors (${r.authors.slice(0, 2).join(', ')}${r.authors.length > 2 ? ', et al.' : ''})`
+        : `${r.authors.join(', ')} — expertise not independently verified`;
+
+    return {
+      score,
+      level,
+      authorExpertise,
+      publicationType: pubType,
+      peerReviewed,
+      journalReputation: journalRep,
+      methodology: r.abstract && r.abstract.length > 100
+        ? 'Abstract suggests structured research'
+        : 'Insufficient information to assess methodology',
+      reasoning: factors.join('. ') + '.',
+    };
+  });
+}
+
+/**
+ * Full AI-powered credibility assessment — requires Claude API key.
+ * Falls back to rule-based assessment if API key is missing.
+ */
 export async function assessCredibility(
   results: SourceResult[],
   apiKey: string
 ): Promise<CredibilityAssessment[]> {
   if (!apiKey || results.length === 0) {
-    return results.map(() => ({
-      score: 5,
-      level: 'unknown' as const,
-      authorExpertise: 'Unable to assess without API key',
-      publicationType: 'Unknown',
-      peerReviewed: false,
-      journalReputation: 'Unknown',
-      methodology: 'Not assessed',
-      reasoning: 'Credibility assessment requires an API key.',
-    }));
+    return assessCredibilityLocal(results);
   }
 
   const sourceSummaries = results.map((r, i) =>
@@ -207,17 +462,8 @@ ${sourceSummaries}`,
       reasoning: a.reasoning || 'No assessment available',
     }));
   } catch (err) {
-    console.error('Credibility assessment failed:', err);
-    return results.map(() => ({
-      score: 5,
-      level: 'unknown' as const,
-      authorExpertise: 'Assessment failed',
-      publicationType: 'Unknown',
-      peerReviewed: false,
-      journalReputation: 'Unknown',
-      methodology: 'Not assessed',
-      reasoning: 'Credibility assessment encountered an error.',
-    }));
+    console.error('AI credibility assessment failed, using rule-based fallback:', err);
+    return assessCredibilityLocal(results);
   }
 }
 
